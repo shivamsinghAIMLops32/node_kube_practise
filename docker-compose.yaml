@@ -4,24 +4,46 @@ services:
   backend:
     build:
       context: .
-      dockerfile: backend.Dockerfile
+      dockerfile: Dockerfile       # 👈 your Bun backend Dockerfile
+    image: shivamsinghdocker12/backend:latest
     container_name: backend
+    environment:
+      - DATABASE_URL=postgresql://shivam:password@postgres_db:5432/mydatabase
     ports:
-      - "5000:5000" # Optional (for direct backend testing)
+      - "5000:5000"
+    depends_on:
+      - db
+    networks:
+      - app-network
+  
+  db:
+    image: postgres:latest
+    container_name: postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: shivam
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydatabase
+    volumes:
+      - db_data:/var/lib/postgresql/data
     networks:
       - app-network
 
   nginx:
-    build:
-      context: .
-      dockerfile: nginx.Dockerfile  # use a second file if you separated Dockerfiles
+    image: nginx:alpine           # 👈 use official Nginx image (no Dockerfile needed)
     container_name: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
       - "80:80"
     depends_on:
       - backend
     networks:
       - app-network
+
+volumes:
+  db_data:
+    driver: local
 
 networks:
   app-network:
